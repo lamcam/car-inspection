@@ -1,11 +1,11 @@
 import { connectDB } from "@/lib/mongoose";
-import Car from "@/models/Car";
+import Criteria from "@/models/Criteria";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   await connectDB();
-  const cars = await Car.find();
-  return NextResponse.json(cars);
+  const criteria = await Criteria.find();
+  return NextResponse.json(criteria);
 }
 
 export async function POST(req: Request) {
@@ -15,6 +15,6 @@ export async function POST(req: Request) {
   if (!name)
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
 
-  const car = await Car.create({ name });
-  return NextResponse.json(car, { status: 201 });
+  const criteria = await Criteria.create({ name });
+  return NextResponse.json(criteria, { status: 201 });
 }
