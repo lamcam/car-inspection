@@ -1,86 +1,117 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 
-type Criteria = { _id: string; name: string };
+type Criteria = {
+  _id: string;
+  name: string;
+};
 
-interface AssignInspectionProps {
-  params: { carId: string };
-}
-
-export default function AssignInspection({ params }: AssignInspectionProps) {
-  const [criteriaList, setCriteriaList] = useState<Criteria[]>([]);
-  const [selected, setSelected] = useState<string[]>([]);
+export default function InspectPage() {
+  const { id } = useParams();
   const router = useRouter();
+  const [criteriaList, setCriteriaList] = useState<Criteria[]>([]);
+  const [form, setForm] = useState<
+    { criteriaId: string; is_good: boolean; note?: string }[]
+  >([]);
+  const [loading, setLoading] = useState(false);
+
+  if (!id) return null;
 
   useEffect(() => {
     fetch('/api/criteria')
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to fetch criteria');
-        return res.json() as Promise<Criteria[]>;
-      })
-      .then(setCriteriaList)
-      .catch((error) => {
-        console.error('Error fetching criteria:', error);
-        alert('Lỗi khi tải danh sách tiêu chí');
+      .then((res) => res.json())
+      .then((data: Criteria[]) => {
+        const limited = data.slice(0, 5);
+        setCriteriaList(limited);
+        setForm(limited.map((c) => ({ criteriaId: c._id, is_good: true })));
       });
   }, []);
 
-  const toggleCriteria = (id: string) => {
-    setSelected((prev) =>
-      prev.includes(id)
-        ? prev.filter((cid) => cid !== id)
-        : prev.length < 5
-        ? [...prev, id]
-        : prev
+  const handleChange = (index: number, is_good: boolean) => {
+    setForm((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, is_good, note: is_good ? undefined : item.note || '' } : item
+      )
     );
   };
 
-  const assignToCar = async () => {
-    try {
-      const res = await fetch(`/api/cars/${params.carId}`, {
-        method: 'POST',
-        body: JSON.stringify({ criteriaIds: selected }),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        alert(`Lỗi: ${error.error || 'Không thể gán tiêu chí'}`);
+  const handleNoteChange = (index: number, value: string) => {
+    setForm((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, note: value } : item))
+    );
+  };
+
+  const handleSubmit = async () => {
+    for (const item of form) {
+      if (!item.is_good && !item.note?.trim()) {
+        alert('Vui lòng nhập lý do với tiêu chí không đạt.');
         return;
       }
-      router.push(`/inspect/${params.carId}`);
-    } catch (error) {
-      console.error('Error assigning criteria:', error);
-      alert('Lỗi hệ thống khi gán tiêu chí');
     }
+
+    setLoading(true);
+    const res = await fetch(`/api/cars/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ inspection: form }),
+    });
+
+    if (res.ok) {
+      alert('Kiểm định thành công!');
+      router.push('/');
+    } else {
+      alert('Lỗi kiểm định.');
+    }
+    setLoading(false);
   };
 
   return (
-    <main className="p-6 max-w-xl mx-auto">
-      <h1 className="text-xl font-bold mb-4">Chọn tiêu chí kiểm tra (tối đa 5)</h1>
-      <ul className="space-y-2">
-        {criteriaList.map((cri) => (
-          <li key={cri._id}>
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                value={cri._id}
-                checked={selected.includes(cri._id)}
-                onChange={() => toggleCriteria(cri._id)}
-                disabled={!selected.includes(cri._id) && selected.length >= 5}
+    <main className="max-w-2xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">Kiểm định xe</h1>
+
+      <ul className="space-y-6">
+        {criteriaList.map((item, index) => (
+          <li key={item._id} className="border rounded-xl p-4">
+            <p className="font-medium">{item.name}</p>
+            <div className="flex gap-4 mt-2">
+              <label>
+                <input
+                  type="radio"
+                  checked={form[index]?.is_good === true}
+                  onChange={() => handleChange(index, true)}
+                />{' '}
+                Đạt
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  checked={form[index]?.is_good === false}
+                  onChange={() => handleChange(index, false)}
+                />{' '}
+                Không đạt
+              </label>
+            </div>
+
+            {form[index]?.is_good === false && (
+              <textarea
+                placeholder="Nhập lý do không đạt"
+                className="mt-2 w-full p-2 border rounded"
+                value={form[index].note || ''}
+                onChange={(e) => handleNoteChange(index, e.target.value)}
               />
-              <span>{cri.name}</span>
-            </label>
+            )}
           </li>
         ))}
       </ul>
+
       <button
-        disabled={selected.length === 0}
-        onClick={assignToCar}
-        className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
+        onClick={handleSubmit}
+        className="mt-6 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+        disabled={loading}
       >
-        Tiến hành kiểm tra
+        {loading ? 'Đang xử lý...' : 'Hoàn tất kiểm định'}
       </button>
     </main>
   );
