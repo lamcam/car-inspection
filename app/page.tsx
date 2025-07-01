@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Button from '@/app/components/ui/Button';
 
 type Car = {
   _id: string;
@@ -50,17 +51,13 @@ export default function Home() {
                 </p>
               </div>
 
-              <button
+              <Button
                 onClick={() => handleClick(car)}
                 disabled={car.status === 2}
-                className={`px-4 py-2 rounded text-white ${
-                  car.status === 2
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
+                variant={car.status === 2 ? 'outline' : 'secondary'}
               >
                 {buttonText[car.status]}
-              </button>
+              </Button>
             </li>
           ))}
         </ul>

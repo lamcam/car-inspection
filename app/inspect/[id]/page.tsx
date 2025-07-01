@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Button from '@/app/components/ui/Button';
 
 type Criteria = {
   _id: string;
@@ -20,7 +21,7 @@ export default function InspectPage() {
   if (!id) return null;
 
   useEffect(() => {
-    fetch('/api/criteria')
+    fetch("/api/criteria")
       .then((res) => res.json())
       .then((data: Criteria[]) => {
         const limited = data.slice(0, 5);
@@ -32,7 +33,9 @@ export default function InspectPage() {
   const handleChange = (index: number, is_good: boolean) => {
     setForm((prev) =>
       prev.map((item, i) =>
-        i === index ? { ...item, is_good, note: is_good ? undefined : item.note || '' } : item
+        i === index
+          ? { ...item, is_good, note: is_good ? undefined : item.note || "" }
+          : item
       )
     );
   };
@@ -46,23 +49,23 @@ export default function InspectPage() {
   const handleSubmit = async () => {
     for (const item of form) {
       if (!item.is_good && !item.note?.trim()) {
-        alert('Vui lòng nhập lý do với tiêu chí không đạt.');
+        alert("Vui lòng nhập lý do với tiêu chí không đạt.");
         return;
       }
     }
 
     setLoading(true);
     const res = await fetch(`/api/cars/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ inspection: form }),
     });
 
     if (res.ok) {
-      alert('Kiểm định thành công!');
-      router.push('/');
+      alert("Kiểm định thành công!");
+      router.push("/");
     } else {
-      alert('Lỗi kiểm định.');
+      alert("Lỗi kiểm định.");
     }
     setLoading(false);
   };
@@ -81,7 +84,7 @@ export default function InspectPage() {
                   type="radio"
                   checked={form[index]?.is_good === true}
                   onChange={() => handleChange(index, true)}
-                />{' '}
+                />{" "}
                 Đạt
               </label>
               <label>
@@ -89,7 +92,7 @@ export default function InspectPage() {
                   type="radio"
                   checked={form[index]?.is_good === false}
                   onChange={() => handleChange(index, false)}
-                />{' '}
+                />{" "}
                 Không đạt
               </label>
             </div>
@@ -98,21 +101,24 @@ export default function InspectPage() {
               <textarea
                 placeholder="Nhập lý do không đạt"
                 className="mt-2 w-full p-2 border rounded"
-                value={form[index].note || ''}
+                value={form[index].note || ""}
                 onChange={(e) => handleNoteChange(index, e.target.value)}
               />
             )}
           </li>
         ))}
       </ul>
+      <div className="mt-6 flex gap-4">
+        <div className="mt-6 flex gap-4">
+          <Button variant="outline" onClick={() => router.back()}>
+            ← Quay lại
+          </Button>
 
-      <button
-        onClick={handleSubmit}
-        className="mt-6 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
-        disabled={loading}
-      >
-        {loading ? 'Đang xử lý...' : 'Hoàn tất kiểm định'}
-      </button>
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? "Đang xử lý..." : "Hoàn tất kiểm định"}
+          </Button>
+        </div>
+      </div>
     </main>
   );
 }
