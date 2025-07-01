@@ -40,7 +40,7 @@ MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/<dbname>?retry
 Clone repo và khởi chạy local development server:
 ```
 git clone https://github.com/your-username/car-inspection-app.git
-cd car-inspection-app
+cd car-inspection
 npm install
 npm run dev
 
